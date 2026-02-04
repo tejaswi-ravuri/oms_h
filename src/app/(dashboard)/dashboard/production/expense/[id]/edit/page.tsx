@@ -1,14 +1,16 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { redirect, notFound } from 'next/navigation';
-import { ExpenseForm } from '@/components/production/expense-form';
-import { Database } from '@/types/database';
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import { ExpenseForm } from "@/components/production/expense-form";
+import { Database } from "@/types/database";
 
 interface EditExpensePageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function EditExpensePage({ params }: EditExpensePageProps) {
-  const supabase = createServerSupabaseClient();
+export default async function EditExpensePage({
+  params,
+}: EditExpensePageProps) {
+  const supabase = await createServerSupabaseClient();
   const resolvedParams = await params;
 
   const {
@@ -16,24 +18,26 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect('/login');
+    return redirect("/login");
   }
 
   const { data: expense, error } = await supabase
-    .from('expenses')
-    .select(`
+    .from("expenses")
+    .select(
+      `
       *,
       ledgers!expenses_ledger_id_fkey ( business_name ),
       manual_ledgers:ledgers!expenses_manual_ledger_id_fkey ( business_name )
-    `)
-    .eq('id', resolvedParams.id)
+    `,
+    )
+    .eq("id", resolvedParams.id)
     .single();
 
   if (error || !expense) {
     notFound();
   }
 
-  const { data: ledgers } = await supabase.from('ledgers').select('*');
+  const { data: ledgers } = await supabase.from("ledgers").select("*");
 
   return (
     <div className="p-6">

@@ -1,51 +1,53 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import { LedgerForm } from '@/components/ledger/ledger-form'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import { LedgerForm } from "@/components/ledger/ledger-form";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface LedgerEditPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default async function LedgerEditPage({ params }: LedgerEditPageProps) {
   // Await the params
-  const { id } = await params
-  
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const { id } = await params;
+
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Get user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
   if (!profile) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Check permissions
-  if (profile.user_role !== 'Admin' && profile.user_role !== 'Manager') {
-    redirect('/dashboard/ledger/list')
+  if (profile.user_role !== "Admin" && profile.user_role !== "Manager") {
+    redirect("/dashboard/ledger/list");
   }
 
   // Fetch ledger details
   const { data: ledger, error } = await supabase
-    .from('ledgers')
-    .select('*')
-    .eq('ledger_id', id)
-    .single()
+    .from("ledgers")
+    .select("*")
+    .eq("ledger_id", id)
+    .single();
 
   if (error || !ledger) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -68,5 +70,5 @@ export default async function LedgerEditPage({ params }: LedgerEditPageProps) {
 
       <LedgerForm userId={user.id} ledger={ledger} isEdit={true} />
     </div>
-  )
+  );
 }

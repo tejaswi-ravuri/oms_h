@@ -1,88 +1,99 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
-  ArrowLeft, 
-  Edit, 
-  User, 
-  Mail, 
-  Phone, 
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  ArrowLeft,
+  Edit,
+  User,
+  Mail,
+  Phone,
   MapPin,
   Calendar,
   Shield,
   UserCheck,
   UserX,
-  FileText
-} from 'lucide-react'
-import Link from 'next/link'
-import { formatDate } from '@/lib/utils'
+  FileText,
+} from "lucide-react";
+import Link from "next/link";
+import { formatDate } from "@/lib/utils";
 
 interface UserDetailPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 export default async function UserDetailPage({ params }: UserDetailPageProps) {
-  const supabase = createServerSupabaseClient()
-  
-  const { id } = await params
+  const supabase = await createServerSupabaseClient();
 
-  const { data: { user: currentUser } } = await supabase.auth.getUser()
-  
+  const { id } = await params;
+
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
   if (!currentUser) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Get current user profile
   const { data: currentProfile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", currentUser.id)
+    .single();
 
   if (!currentProfile) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Only admins can view other user details
-  if (currentProfile.user_role !== 'Admin' && currentUser.id !== id) {
-    redirect('/dashboard/users/manage')
+  if (currentProfile.user_role !== "Admin" && currentUser.id !== id) {
+    redirect("/dashboard/users/manage");
   }
 
   // Fetch user profile details
   const { data: userProfile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error || !userProfile) {
-    notFound()
+    notFound();
   }
 
-  const canEdit = currentProfile.user_role === 'Admin' || currentUser.id === id
+  const canEdit = currentProfile.user_role === "Admin" || currentUser.id === id;
 
   const getRoleBadge = (role: string) => {
     const roleColors = {
-      'Admin': 'bg-red-100 text-red-700',
-      'Manager': 'bg-blue-100 text-blue-700',
-      'User': 'bg-green-100 text-green-700'
-    }
-    
+      Admin: "bg-red-100 text-red-700",
+      Manager: "bg-blue-100 text-blue-700",
+      User: "bg-green-100 text-green-700",
+    };
+
     return (
-      <Badge variant="secondary" className={roleColors[role as keyof typeof roleColors]}>
+      <Badge
+        variant="secondary"
+        className={roleColors[role as keyof typeof roleColors]}
+      >
         <Shield className="h-3 w-3 mr-1" />
         {role}
       </Badge>
-    )
-  }
+    );
+  };
 
   const getStatusBadge = (status: string) => {
-    return status === 'Active' ? (
+    return status === "Active" ? (
       <Badge variant="default" className="bg-green-100 text-green-700">
         <UserCheck className="h-3 w-3 mr-1" />
         Active
@@ -92,12 +103,15 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
         <UserX className="h-3 w-3 mr-1" />
         Inactive
       </Badge>
-    )
-  }
+    );
+  };
 
   const getInitials = (firstName?: string | null, lastName?: string | null) => {
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase() || 'U'
-  }
+    return (
+      `${firstName?.charAt(0) || ""}${lastName?.charAt(0) || ""}`.toUpperCase() ||
+      "U"
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -167,34 +181,60 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">First Name</label>
-                  <p className="text-lg">{userProfile.first_name || 'Not specified'}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
+                  <p className="text-lg">
+                    {userProfile.first_name || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Last Name</label>
-                  <p className="text-lg">{userProfile.last_name || 'Not specified'}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
+                  <p className="text-lg">
+                    {userProfile.last_name || "Not specified"}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Email</label>
-                  <p className="text-gray-900 font-mono text-sm">{userProfile.email}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <p className="text-gray-900 font-mono text-sm">
+                    {userProfile.email}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Mobile</label>
-                  <p className="text-gray-900">{userProfile.mobile || 'Not provided'}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    Mobile
+                  </label>
+                  <p className="text-gray-900">
+                    {userProfile.mobile || "Not provided"}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Role</label>
-                  <div className="mt-1">{getRoleBadge(userProfile.user_role)}</div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Role
+                  </label>
+                  <div className="mt-1">
+                    {getRoleBadge(userProfile.user_role)}
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Status</label>
-                  <div className="mt-1">{getStatusBadge(userProfile.user_status)}</div>
+                  <label className="text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <div className="mt-1">
+                    {getStatusBadge(userProfile.user_status)}
+                  </div>
                 </div>
               </div>
 
               {userProfile.dob && (
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Date of Birth</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Date of Birth
+                  </label>
                   <p className="text-gray-900 flex items-center">
                     <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                     {formatDate(userProfile.dob)}
@@ -211,22 +251,30 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
                 <Phone className="h-5 w-5 mr-2" />
                 Contact Information
               </CardTitle>
-              <CardDescription>Communication and address details</CardDescription>
+              <CardDescription>
+                Communication and address details
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Email
+                    </label>
                     <p className="text-gray-900">{userProfile.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Phone className="h-4 w-4 text-gray-400" />
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Mobile</label>
-                    <p className="text-gray-900">{userProfile.mobile || 'Not provided'}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Mobile
+                    </label>
+                    <p className="text-gray-900">
+                      {userProfile.mobile || "Not provided"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -234,21 +282,29 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
               <div className="flex items-start space-x-3">
                 <MapPin className="h-4 w-4 text-gray-400 mt-1" />
                 <div className="flex-1">
-                  <label className="text-sm font-medium text-gray-700">Address</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Address
+                  </label>
                   <div className="text-gray-900">
-                    {userProfile.address && (
-                      <p>{userProfile.address}</p>
-                    )}
-                    {(userProfile.city || userProfile.state || userProfile.country) && (
+                    {userProfile.address && <p>{userProfile.address}</p>}
+                    {(userProfile.city ||
+                      userProfile.state ||
+                      userProfile.country) && (
                       <p>
-                        {[userProfile.city, userProfile.state, userProfile.country]
+                        {[
+                          userProfile.city,
+                          userProfile.state,
+                          userProfile.country,
+                        ]
                           .filter(Boolean)
-                          .join(', ')}
+                          .join(", ")}
                       </p>
                     )}
-                    {!userProfile.address && !userProfile.city && !userProfile.state && (
-                      <p className="text-gray-500">Not provided</p>
-                    )}
+                    {!userProfile.address &&
+                      !userProfile.city &&
+                      !userProfile.state && (
+                        <p className="text-gray-500">Not provided</p>
+                      )}
                   </div>
                 </div>
               </div>
@@ -268,12 +324,20 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Document Type</label>
-                    <p className="text-gray-900">{userProfile.document_type || 'Not specified'}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Document Type
+                    </label>
+                    <p className="text-gray-900">
+                      {userProfile.document_type || "Not specified"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Document Number</label>
-                    <p className="font-mono text-sm">{userProfile.document_number || 'Not provided'}</p>
+                    <label className="text-sm font-medium text-gray-700">
+                      Document Number
+                    </label>
+                    <p className="font-mono text-sm">
+                      {userProfile.document_number || "Not provided"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -284,17 +348,27 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Account Information</CardTitle>
-              <CardDescription>Account creation and activity details</CardDescription>
+              <CardDescription>
+                Account creation and activity details
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Account Created</label>
-                  <p className="text-gray-900">{formatDate(userProfile.created_at)}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    Account Created
+                  </label>
+                  <p className="text-gray-900">
+                    {formatDate(userProfile.created_at)}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Last Updated</label>
-                  <p className="text-gray-900">{formatDate(userProfile.updated_at)}</p>
+                  <label className="text-sm font-medium text-gray-700">
+                    Last Updated
+                  </label>
+                  <p className="text-gray-900">
+                    {formatDate(userProfile.updated_at)}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -302,5 +376,5 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

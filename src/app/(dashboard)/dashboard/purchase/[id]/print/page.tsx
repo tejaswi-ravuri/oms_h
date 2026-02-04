@@ -1,26 +1,29 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import PrintPageClient from './PrintPageClient'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import PrintPageClient from "./PrintPageClient";
 
 interface PrintPurchaseOrderPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 async function getPurchaseOrder(id: Promise<{ id: string }>) {
   const { id: purchaseOrderId } = await id;
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   const { data: purchaseOrder, error } = await supabase
-    .from('purchase_orders')
-    .select(`
+    .from("purchase_orders")
+    .select(
+      `
       *,
       ledgers (
         business_name,
@@ -34,19 +37,22 @@ async function getPurchaseOrder(id: Promise<{ id: string }>) {
         zip_code,
         gst_number
       )
-    `)
-    .eq('id', purchaseOrderId)
-    .single()
+    `,
+    )
+    .eq("id", purchaseOrderId)
+    .single();
 
   if (error || !purchaseOrder) {
-    notFound()
+    notFound();
   }
 
-  return purchaseOrder
+  return purchaseOrder;
 }
 
-export default async function PrintPurchaseOrderPage({ params }: PrintPurchaseOrderPageProps) {
-  const purchaseOrder = await getPurchaseOrder(params)
+export default async function PrintPurchaseOrderPage({
+  params,
+}: PrintPurchaseOrderPageProps) {
+  const purchaseOrder = await getPurchaseOrder(params);
 
-  return <PrintPageClient purchaseOrder={purchaseOrder} />
+  return <PrintPageClient purchaseOrder={purchaseOrder} />;
 }

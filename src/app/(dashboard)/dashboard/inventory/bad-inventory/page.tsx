@@ -1,40 +1,44 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { BadInventoryContent } from '@/components/inventory/bad-inventory-content'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { BadInventoryContent } from "@/components/inventory/bad-inventory-content";
 
 export default async function BadInventoryPage() {
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Get user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
   if (!profile) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Fetch bad inventory items
- const { data: badInventoryItems, error } = await supabase
-    .from('isteaching_challans')
-    .select(`
+  const { data: badInventoryItems, error } = await supabase
+    .from("isteaching_challans")
+    .select(
+      `
       *,
       ledgers (business_name),
       products (product_name, product_description, product_image, product_sku)
-    `)
-    .eq('inventory_classification', 'bad')
-    .order('date', { ascending: false })
+    `,
+    )
+    .eq("inventory_classification", "bad")
+    .order("date", { ascending: false });
 
   if (error) {
-    console.error('Error fetching bad inventory items:', error)
+    console.error("Error fetching bad inventory items:", error);
   }
 
   return (
@@ -42,5 +46,5 @@ export default async function BadInventoryPage() {
       items={badInventoryItems || []}
       userRole={profile.user_role}
     />
-  )
+  );
 }

@@ -1,25 +1,28 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
-import PrintChallanClient from './PrintChallanClient'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect, notFound } from "next/navigation";
+import PrintChallanClient from "./PrintChallanClient";
 
 interface PrintWeaverChallanPageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
 async function getWeaverChallan(id: string) {
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   const { data: weaverChallan, error } = await supabase
-    .from('weaver_challans')
-    .select(`
+    .from("weaver_challans")
+    .select(
+      `
       *,
       ledgers:ledgers!weaver_challans_ledger_id_fkey (
         business_name,
@@ -33,20 +36,23 @@ async function getWeaverChallan(id: string) {
         zip_code,
         gst_number
       )
-    `)
-    .eq('id', id)
-    .single()
+    `,
+    )
+    .eq("id", id)
+    .single();
 
   if (error || !weaverChallan) {
-    notFound()
+    notFound();
   }
 
-  return weaverChallan
+  return weaverChallan;
 }
 
-export default async function PrintWeaverChallanPage({ params }: PrintWeaverChallanPageProps) {
+export default async function PrintWeaverChallanPage({
+  params,
+}: PrintWeaverChallanPageProps) {
   const resolvedParams = await params;
-  const weaverChallan = await getWeaverChallan(resolvedParams.id)
+  const weaverChallan = await getWeaverChallan(resolvedParams.id);
 
-  return <PrintChallanClient weaverChallan={weaverChallan} />
+  return <PrintChallanClient weaverChallan={weaverChallan} />;
 }

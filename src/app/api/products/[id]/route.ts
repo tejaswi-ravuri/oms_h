@@ -1,5 +1,5 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 
 interface Product {
   id: number;
@@ -13,12 +13,12 @@ interface Product {
   product_description?: string;
   product_material?: string;
   product_brand: string;
- product_country: string;
-  product_status: 'Active' | 'Inactive';
+  product_country: string;
+  product_status: "Active" | "Inactive";
   product_qty: number;
   wash_care?: string;
- created_at: string;
- updated_at: string;
+  created_at: string;
+  updated_at: string;
   batch_numbers?: string[];
   cost_incurred?: number;
   weaver_challan_numbers?: string[];
@@ -32,8 +32,8 @@ interface Product {
 interface IsteachingChallan {
   id: number;
   challan_no: string;
- date: string;
- batch_number: string[];
+  date: string;
+  batch_number: string[];
   quality: string;
   quantity: number;
   product_size: { size: string; quantity: number }[]; // Array of size objects
@@ -51,10 +51,12 @@ interface Expense {
 }
 
 // Parse size details from various formats
-const parseSizeDetails = (sizeDetails: unknown): { size: string; quantity: number }[] => {
-  if (!sizeDetails) return []
- try {
-    if (typeof sizeDetails === 'string') {
+const parseSizeDetails = (
+  sizeDetails: unknown,
+): { size: string; quantity: number }[] => {
+  if (!sizeDetails) return [];
+  try {
+    if (typeof sizeDetails === "string") {
       // If it's a string, try to parse as JSON
       const parsed = JSON.parse(sizeDetails);
       // If parsed result is an array, return it
@@ -62,43 +64,57 @@ const parseSizeDetails = (sizeDetails: unknown): { size: string; quantity: numbe
         return parsed;
       }
       // If parsed result is an object with size and quantity, wrap in array
-      if (parsed && typeof parsed === 'object' && parsed.size && parsed.quantity !== undefined) {
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        parsed.size &&
+        parsed.quantity !== undefined
+      ) {
         return [parsed];
       }
       return [];
     } else if (Array.isArray(sizeDetails)) {
       // If it's already an array, return as is
       return sizeDetails;
-    } else if (sizeDetails && typeof sizeDetails === 'object' && (sizeDetails as { size: string; quantity: number }).size && (sizeDetails as { size: string; quantity: number }).quantity !== undefined) {
+    } else if (
+      sizeDetails &&
+      typeof sizeDetails === "object" &&
+      (sizeDetails as { size: string; quantity: number }).size &&
+      (sizeDetails as { size: string; quantity: number }).quantity !== undefined
+    ) {
       // If it's a single object with size and quantity, wrap in array
-      return [(sizeDetails as { size: string; quantity: number })];
+      return [sizeDetails as { size: string; quantity: number }];
     }
     return [];
   } catch {
     return [];
   }
-}
+};
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const resolvedParams = await params;
-    const supabase = createServerSupabaseClient();
-    
+    const supabase = await createServerSupabaseClient();
+
     // First, fetch the product by ID
     const { data: product, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', resolvedParams.id)
+      .from("products")
+      .select("*")
+      .eq("id", resolvedParams.id)
       .single();
-    
+
     if (error || !product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
-    
+
     // Find all isteaching_challans associated with this product
     const { data: isteachingChallans, error: challanError } = await supabase
-      .from('isteaching_challans')
-      .select(`
+      .from("isteaching_challans")
+      .select(
+        `
         id,
         challan_no,
         date,
@@ -106,56 +122,67 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         quality,
         quantity,
         product_size
-      `)
-      .eq('selected_product_id', resolvedParams.id);
-    
+      `,
+      )
+      .eq("selected_product_id", resolvedParams.id);
+
     if (challanError) {
-      console.error('Error fetching isteaching challans:', challanError);
+      console.error("Error fetching isteaching challans:", challanError);
     }
-    
+
     // Parse product_size in isteachingChallans to handle different formats
-    const parsedIsteachingChallans = isteachingChallans?.map((challan: IsteachingChallan) => ({
-      ...challan,
-      product_size: parseSizeDetails(challan.product_size)
-    })) || [];
-    
+    const parsedIsteachingChallans =
+      isteachingChallans?.map((challan: IsteachingChallan) => ({
+        ...challan,
+        product_size: parseSizeDetails(challan.product_size),
+      })) || [];
+
     // Get all batch numbers associated with this product
-    const allBatchNumbers = parsedIsteachingChallans ? parsedIsteachingChallans.flatMap((challan: IsteachingChallan) => challan.batch_number) : [];
-    
+    const allBatchNumbers = parsedIsteachingChallans
+      ? parsedIsteachingChallans.flatMap(
+          (challan: IsteachingChallan) => challan.batch_number,
+        )
+      : [];
+
     // Find all weaver_challans associated with these batch numbers
     let weaverChallans: WeaverChallan[] = [];
     if (allBatchNumbers.length > 0) {
       const { data: relatedWeaverChallans, error: weaverError } = await supabase
-        .from('weaver_challans')
-        .select('challan_no, batch_number, quality_details, vendor_amount')
-        .in('batch_number', allBatchNumbers);
-      
+        .from("weaver_challans")
+        .select("challan_no, batch_number, quality_details, vendor_amount")
+        .in("batch_number", allBatchNumbers);
+
       if (weaverError) {
-        console.error('Error fetching weaver challans:', weaverError);
+        console.error("Error fetching weaver challans:", weaverError);
       }
-      
-      weaverChallans = relatedWeaverChallans as WeaverChallan[] || [];
+
+      weaverChallans = (relatedWeaverChallans as WeaverChallan[]) || [];
     }
-    
+
     // Calculate total cost from expenses associated with the stitching challans
     let totalCost = 0;
     if (parsedIsteachingChallans && parsedIsteachingChallans.length > 0) {
-      const stitchingChallanNos = parsedIsteachingChallans.map((challan: IsteachingChallan) => challan.challan_no);
-      
+      const stitchingChallanNos = parsedIsteachingChallans.map(
+        (challan: IsteachingChallan) => challan.challan_no,
+      );
+
       const { data: expenses, error: expenseError } = await supabase
-        .from('expenses')
-        .select('cost')
-        .in('challan_no', stitchingChallanNos);
-      
+        .from("expenses")
+        .select("cost")
+        .in("challan_no", stitchingChallanNos);
+
       if (expenseError) {
-        console.error('Error fetching expenses:', expenseError);
+        console.error("Error fetching expenses:", expenseError);
       }
-      
+
       if (expenses) {
-        totalCost = expenses.reduce((sum, expense: Expense) => sum + (expense.cost || 0), 0);
+        totalCost = expenses.reduce(
+          (sum, expense: Expense) => sum + (expense.cost || 0),
+          0,
+        );
       }
     }
-    
+
     // Return the product data with additional information
     return NextResponse.json({
       id: product.id,
@@ -178,15 +205,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       // Additional fields
       batch_numbers: allBatchNumbers,
       cost_incurred: totalCost,
-      weaver_challan_numbers: weaverChallans.map(wc => wc.challan_no),
-      stitching_challan_numbers: parsedIsteachingChallans ? parsedIsteachingChallans.map((sc: IsteachingChallan) => sc.challan_no) : [],
+      weaver_challan_numbers: weaverChallans.map((wc) => wc.challan_no),
+      stitching_challan_numbers: parsedIsteachingChallans
+        ? parsedIsteachingChallans.map((sc: IsteachingChallan) => sc.challan_no)
+        : [],
       associated_data: {
         stitching_challans: parsedIsteachingChallans,
-        weaver_challans: weaverChallans
-      }
+        weaver_challans: weaverChallans,
+      },
     });
   } catch (error) {
-    console.error('Error fetching product:', error);
-    return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
+    console.error("Error fetching product:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch product" },
+      { status: 500 },
+    );
   }
 }

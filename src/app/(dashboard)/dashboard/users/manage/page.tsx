@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { UsersContent } from "@/components/users/users-content";
 
 export default async function ManageUsersPage() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const {
     data: { user },

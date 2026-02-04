@@ -1,25 +1,27 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { UserForm } from '@/components/users/user-form'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { UserForm } from "@/components/users/user-form";
 
 export default async function CreateUserPage() {
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Get user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
-  if (!profile || profile.user_role !== 'Admin') {
-    redirect('/dashboard/users/manage')
+  if (!profile || profile.user_role !== "Admin") {
+    redirect("/dashboard/users/manage");
   }
 
   return (
@@ -33,5 +35,5 @@ export default async function CreateUserPage() {
 
       <UserForm />
     </div>
-  )
+  );
 }

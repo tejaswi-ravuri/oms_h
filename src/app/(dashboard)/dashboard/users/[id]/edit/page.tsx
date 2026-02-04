@@ -12,7 +12,7 @@ interface UserEditPageProps {
 }
 
 export default async function UserEditPage({ params }: UserEditPageProps) {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { id } = await params;
 

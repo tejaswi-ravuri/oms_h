@@ -1,53 +1,58 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { WeaverChallanContent } from '@/components/production/weaver-challan-content'
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { WeaverChallanContent } from "@/components/production/weaver-challan-content";
 
 export default async function WeaverChallanPage() {
-  const supabase = createServerSupabaseClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Get user profile
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
   if (!profile) {
-    redirect('/login')
+    redirect("/login");
   }
 
   // Fetch weaver challans with pagination
   const { data: challans, count } = await supabase
-    .from('weaver_challans')
-    .select(`
+    .from("weaver_challans")
+    .select(
+      `
       *,
       ledgers:ledgers!weaver_challans_ledger_id_fkey (
         business_name,
         contact_person_name
       )
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
+    `,
+      { count: "exact" },
+    )
+    .order("created_at", { ascending: false });
 
   // Fetch ledgers for dropdown
   const { data: ledgers } = await supabase
-    .from('ledgers')
-    .select('*')
-    .order('business_name', { ascending: true })
+    .from("ledgers")
+    .select("*")
+    .order("business_name", { ascending: true });
 
   return (
-    <WeaverChallanContent 
-      challans={challans || []} 
+    <WeaverChallanContent
+      challans={challans || []}
       totalCount={count || 0}
       ledgers={ledgers || []}
       userRole={profile.user_role}
       userId={user.id}
       userName={`${profile.first_name} ${profile.last_name}`}
     />
-  )
+  );
 }
